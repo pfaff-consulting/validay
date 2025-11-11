@@ -1,0 +1,10 @@
+# Example (default) config file
+
+api:
+  base_url: http://172.21.176.1:8080
+  auth_token: dreb-9f1c0b7a2e4d8c6a1b3e0d5f
+state:
+  current_course: 1
+  current_task: 019a3f6a-02e4-7ff8-98f9-625f2bc77c59
+  last_hint_task: 019a3f6a-02e4-7ff8-98f9-625f2bc77c59
+  last_hint_subtask: '000'
