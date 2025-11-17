@@ -1,6 +1,10 @@
 import os
 import yaml
-from rich import print
+
+from src.exception.app_exceptions import (
+    ConfigFileCannotBeParsedException,
+    ConfigFileNotFoundException,
+)
 
 
 class ConfigState:
@@ -69,10 +73,7 @@ class Config:
     @staticmethod
     def from_file(file_path: str):
         if not os.path.exists(file_path):
-            print(
-                f"[red]Config file not found where expected ([italic]{file_path}[/italic])."
-            )
-            exit(1)
+            raise ConfigFileNotFoundException(file_path)
 
         with open(file_path, "r") as f:
             try:
@@ -87,8 +88,4 @@ class Config:
                     state=state,
                 )
             except yaml.YAMLError as e:
-                print(
-                    f"[red]Error while parsing config file ([italic]{file_path}[/italic])."
-                )
-                print(e)
-                exit(1)
+                raise ConfigFileCannotBeParsedException(file_path)
