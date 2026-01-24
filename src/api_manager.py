@@ -5,7 +5,7 @@ from src.model.task import TaskStateReadModel, TaskStateWriteModel
 
 class ApiManager:
     def __init__(self, base_url: str, api_token: str):
-        self.base_url = base_url
+        self.base_url = base_url.strip('/')
         self.api_token = api_token
 
     def get_task_list(self, course_id: int) -> list[TaskStateReadModel]:
