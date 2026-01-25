@@ -1,6 +1,7 @@
 import os
 import tempfile
 import re
+import sys
 
 from io import StringIO
 from typing import Tuple
@@ -20,6 +21,8 @@ class TaskRunner:
     def run(self) -> TaskSummary:
         private_data_dir, playbook_path = self.__create_ansible_data_dir(self.code)
 
+        self.__handle_pyinstaller()
+
         self.summarizer.playbook_started()
         ansible_runner.run(
             private_data_dir=private_data_dir,
@@ -27,7 +30,7 @@ class TaskRunner:
             inventory="localhost,",
             cmdline="--check",
             event_handler=self.handle_event,
-            quiet=True,
+            quiet=False,
         )
         return self.summarizer.playbook_ended()
 
@@ -108,3 +111,17 @@ class TaskRunner:
             f.flush()
 
         return runner_data_dir, playbook_path
+
+    def __handle_pyinstaller(self) -> None:
+        if hasattr(sys, '_MEIPASS'):
+            base_path = sys._MEIPASS
+            os.environ['ANSIBLE_HOME'] = base_path
+            os.environ['ANSIBLE_PYTHON_INTERPRETER'] = sys.executable
+
+            # Kluczowe dla znalezienia module_utils
+            os.environ['ANSIBLE_MODULE_UTILS'] = os.path.join(base_path, 'ansible', 'module_utils')
+
+            # Upewnij się, że PYTHONPATH zawiera folder ze spakowanymi modułami
+            # Dzięki temu procesy potomne Ansible znajdą biblioteki
+            python_path = os.environ.get('PYTHONPATH', '')
+            os.environ['PYTHONPATH'] = f"{base_path}:{python_path}" if python_path else base_path
