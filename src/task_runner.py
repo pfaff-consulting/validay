@@ -46,7 +46,7 @@ class TaskRunner:
                 inventory="localhost,",
                 cmdline="--check",
                 event_handler=self.handle_event,
-                quiet=True,
+                quiet=False,
             )
 
             return self.summarizer.playbook_ended()
