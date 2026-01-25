@@ -6,7 +6,6 @@ import sys
 from io import StringIO
 from typing import Tuple
 
-import ansible_runner
 from ansible_runner import RunnerConfig
 from ruamel.yaml import YAML
 
@@ -21,37 +20,63 @@ class TaskRunner:
 
     def run(self) -> TaskSummary:
         private_data_dir, playbook_path = self.__create_ansible_data_dir(self.code)
-
         self.__handle_pyinstaller()
 
-        original_init = RunnerConfig.__init__
+        rc = RunnerConfig(
+            private_data_dir=private_data_dir,
+            playbook=playbook_path,
+            inventory="localhost,",
+            cmdline="--check -c local",
+            quiet=False,
+        )
 
-        def patched_init(rc_self, *args, **kwargs):
-            kwargs.pop('event_handler', None)
-            original_init(rc_self, *args, **kwargs)
+        rc.prepare()
+        print('chuj')
 
-            rc_self.executable_cmd = sys.executable
+        if hasattr(rc, 'command') and isinstance(rc.command, list):
+            rc.command[0] = sys.executable
 
-            if not hasattr(rc_self, 'env'):
-                rc_self.env = {}
-
-        RunnerConfig.__init__ = patched_init
+        rc.executable_cmd = sys.executable
 
         try:
             self.summarizer.playbook_started()
 
-            ansible_runner.run(
-                private_data_dir=private_data_dir,
-                playbook=playbook_path,
-                inventory="localhost,",
-                cmdline="--check",
-                event_handler=self.handle_event,
-                quiet=False,
-            )
-
+            from ansible_runner import Runner
+            r = Runner(config=rc, event_handler=self.handle_event)
+            r.run()
             return self.summarizer.playbook_ended()
-        finally:
-            RunnerConfig.__init__ = original_init
+        except Exception as e:
+            print(f"Error: {e}")
+        return self.summarizer.playbook_ended()
+
+        # original_init = RunnerConfig.__init__
+
+        # def patched_init(rc_self, *args, **kwargs):
+        #     kwargs.pop('event_handler', None)
+        #     original_init(rc_self, *args, **kwargs)
+        #
+        #     rc_self.executable_cmd = sys.executable
+        #
+        #     if not hasattr(rc_self, 'env'):
+        #         rc_self.env = {}
+        #
+        # RunnerConfig.__init__ = patched_init
+        #
+        # try:
+        #     self.summarizer.playbook_started()
+        #
+        #     ansible_runner.run(
+        #         private_data_dir=private_data_dir,
+        #         playbook=playbook_path,
+        #         inventory="localhost,",
+        #         cmdline="--check",
+        #         event_handler=self.handle_event,
+        #         quiet=False,
+        #     )
+        #
+        #     return self.summarizer.playbook_ended()
+        # finally:
+        #     RunnerConfig.__init__ = original_init
 
     def handle_event(self, event_data):
         event = event_data.get('event')
