@@ -48,3 +48,16 @@ class ConfigFileCannotBeParsedException(AppException):
 
     def handle(self) -> None:
         sys.exit(1)
+
+
+class ApiErrorException(AppException):
+    def __init__(self, message: str):
+        self.message = message
+
+    def display_message(self, console: Console) -> None:
+        console.print(
+            f"[red]API call error. If the error persists, please contact support.[/]"
+        )
+
+    def handle(self) -> None:
+        sys.exit(1)

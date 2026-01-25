@@ -1,5 +1,6 @@
 import requests
 
+from src.exception.app_exceptions import ApiErrorException
 from src.model.task import TaskStateReadModel, TaskStateWriteModel
 
 
@@ -21,7 +22,7 @@ class ApiManager:
             return None
 
         if resp.status_code != 200:
-            raise Exception
+            raise ApiErrorException('Get task non-200 status code.')
 
         return TaskStateReadModel.model_validate(resp.json())
 
@@ -29,7 +30,7 @@ class ApiManager:
         resp = self.__post_api_call(f"/api/tasks/task-states/{task_id}/report", task_state.model_dump())
 
         if resp.status_code != 200:
-            raise Exception
+            raise ApiErrorException('Report task non-200 status code.')
 
     def __post_api_call(self, uri: str, payload: dict):
         return requests.post(

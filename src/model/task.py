@@ -32,11 +32,12 @@ class TaskStateReadModel(BaseModel):
     name: str
     description: str
 
+    attempts: int
     progress: float
 
     status: TaskStatus
 
-    code: str
+    code: Optional[str] = None
     subtasks: Optional[List[SubtaskStateReadModel]] = None
 
 
