@@ -1,4 +1,7 @@
 import click
+import sys
+import os
+import runpy
 
 from src.api_manager import ApiManager
 from src.click_extensions.aliased_group import AliasedGroup
@@ -69,7 +72,43 @@ def check(ctx):
     ch.run()
 
 
+def handle_ansible_call():
+    if len(sys.argv) < 2:
+        return
+
+    is_ansible_module = "AnsiballZ_" in sys.argv[1] or ".ansible/tmp" in sys.argv[1]
+
+    is_playbook_call = any(arg.endswith(('.yaml', '.yml')) for arg in sys.argv) or \
+                       any(arg in sys.argv for arg in ['--check', '--inventory', '-i'])
+
+    try:
+        if is_ansible_module:
+            script_path = sys.argv[1]
+            sys.argv = sys.argv[1:]
+            runpy.run_path(script_path, run_name='__main__')
+            sys.exit(0)
+
+        elif is_playbook_call:
+            from ansible.cli.playbook import PlaybookCLI
+            ansible_argv = sys.argv[:]
+            ansible_argv[0] = 'ansible-playbook'
+
+            cli = PlaybookCLI(ansible_argv)
+            cli.run()
+            sys.exit(0)
+
+    except Exception as e:
+        with open("/tmp/ansible_hijack_error.txt", "a") as f:
+            import traceback
+            f.write(f"--- Error at {os.path.basename(sys.argv[0])} ---\n")
+            f.write(f"Args: {sys.argv}\n")
+            f.write(traceback.format_exc())
+            f.write("\n")
+
+
 if __name__ == "__main__":
+    handle_ansible_call()
+
     exception_handler = AppExceptionHandler()
 
     try:
